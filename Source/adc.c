@@ -11,7 +11,7 @@ extern volatile uint8_t STATE_CODE;
 
 static uint8_t DMA_CONTROL_TABLE[1024] __attribute__((aligned(1024)));
 
-volatile float16_t SAMPLE_DATA[ADC_SAMPLE_SIZE];
+volatile float32_t SAMPLE_DATA[ADC_SAMPLE_SIZE];
 
 /**
  * @brief 初始化ADC
@@ -103,7 +103,7 @@ void adc_run(uint16_t freq) {
   // 配置DMA双缓存转运。启动前，主副结构各配置1024次转运
   MAP_DMA_setChannelControl(
       DMA_CH7_ADC14 | UDMA_PRI_SELECT,
-      UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1
+      UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_32 | UDMA_ARB_1
   );
   MAP_DMA_setChannelTransfer(
       DMA_CH7_ADC14 | UDMA_PRI_SELECT, UDMA_MODE_PINGPONG, (void *)&ADC14->MEM[0],
@@ -111,7 +111,7 @@ void adc_run(uint16_t freq) {
   );
   MAP_DMA_setChannelControl(
       DMA_CH7_ADC14 | UDMA_ALT_SELECT,
-      UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1
+      UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_32 | UDMA_ARB_1
   );
   MAP_DMA_setChannelTransfer(
       DMA_CH7_ADC14 | UDMA_ALT_SELECT, UDMA_MODE_PINGPONG, (void *)&ADC14->MEM[0],
@@ -139,7 +139,7 @@ void adc_stop(void) {
 void adc_sacle(void) {
   // 根据比例处理ADC数据
   for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
-    SAMPLE_DATA[i] = (float16_t)(*(uint16_t *)(SAMPLE_DATA + i) * 16 / ADC_RESOLUTION);
+    SAMPLE_DATA[i] = (float32_t)(*(uint16_t *)(SAMPLE_DATA + i) * 8 / ADC_RESOLUTION);
   } // TODO 公式调整
 }
 
@@ -154,7 +154,7 @@ void DMA_INT1_IRQHandler(void) {
     //  初次中断，重新配置主结构
     MAP_DMA_setChannelControl(
         DMA_CH7_ADC14 | UDMA_PRI_SELECT,
-        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1
+        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_32 | UDMA_ARB_1
     );
     MAP_DMA_setChannelTransfer(
         DMA_CH7_ADC14 | UDMA_PRI_SELECT, UDMA_MODE_PINGPONG, (void *)&ADC14->MEM[0],
@@ -165,7 +165,7 @@ void DMA_INT1_IRQHandler(void) {
     // 二次中断，重新配置副结构
     MAP_DMA_setChannelControl(
         DMA_CH7_ADC14 | UDMA_ALT_SELECT,
-        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_16 | UDMA_ARB_1
+        UDMA_SIZE_16 | UDMA_SRC_INC_NONE | UDMA_DST_INC_32 | UDMA_ARB_1
     );
     MAP_DMA_setChannelTransfer(
         DMA_CH7_ADC14 | UDMA_ALT_SELECT, UDMA_MODE_PINGPONG, (void *)&ADC14->MEM[0],

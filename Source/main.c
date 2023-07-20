@@ -74,20 +74,15 @@ int main(void) {
 
       /* Debug Start */
       pwm_run();
-      /* Debug End */
-
       update(1000);
-
-      /* Debug Start */
-      // pwm_stop();
-      vofa_firewater_duo((void *)FFT_OUTPUT, (void *)FFT_PHASE, ADC_SAMPLE_SIZE / 2 + 1, true);
+      vofa_firewater_duo((void *)FFT_OUTPUT, (void *)FFT_PHASE, ADC_SAMPLE_SIZE / 2 + 1, false);
       /* Debug End */
 
-      AMPLITUDE[0] = 1;
-      AMPLITUDE[4] = 0.1;
-      THD          = 0.1;
+      // AMPLITUDE[0] = 1;
+      // AMPLITUDE[4] = 0.1;
+      // THD          = 0.1;
 
-      lcd_refresh();
+      // lcd_refresh();
       STATE_CODE = 0x02;
     case 0x02:
       // 结束等待

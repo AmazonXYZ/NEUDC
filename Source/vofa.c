@@ -4,8 +4,6 @@
 #include <stdbool.h>
 
 #include <arm_math_types.h>
-
-#include "arm_math_types_f16.h"
 #include "serial.h"
 
 static const uint8_t FRAME_TAIL[4] = {0x00, 0x00, 0x80, 0x7F};
@@ -19,7 +17,7 @@ static const uint8_t FRAME_TAIL[4] = {0x00, 0x00, 0x80, 0x7F};
  */
 void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
   if (if16) {
-    float16_t *array_f16 = (float16_t *)array;
+    float32_t *array_f16 = (float32_t *)array;
 
     float32_t tmp;
     for (uint16_t i = 0; i < length; i++) {
@@ -40,7 +38,7 @@ void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
 void vofa_firewater_duo(void *array1, void *array2, uint16_t length, bool if16) {
   if (if16) {
     for (uint16_t i = 0; i < length; i++) {
-      serial_printf("%f,%f\n", *((float16_t *)array1 + i), *((float16_t *)array2 + i));
+      serial_printf("%f,%f\n", *((float32_t *)array1 + i), *((float32_t *)array2 + i));
     }
   } else {
     for (uint16_t i = 0; i < length; i++) {
