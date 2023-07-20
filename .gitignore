@@ -1,0 +1,9 @@
+/.vscode/
+/RTE/
+/tmp/
+/out/
+/bin/
+/.clang-format
+/TODO.md
+/*.yml
+/*.cprj

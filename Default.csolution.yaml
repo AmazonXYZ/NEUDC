@@ -1,0 +1,61 @@
+solution:
+  processor:
+    trustzone: non-secure
+    fpu: on
+
+  compiler: AC6
+
+  packs:
+    - pack: ARM::CMSIS
+    - pack: ARM::CMSIS-DSP
+    - pack: TexasInstruments::MSP432P4xx_DFP
+
+  add-path:
+    - SDK
+    - Include
+
+  target-types:
+    - type: Default
+      device: MSP432P401R
+
+  build-types:
+    - type: Debug
+      debug: on
+      optimize: none
+      misc:
+        - C:
+            - -std=c99
+            - -fshort-enums
+            - -fshort-wchar
+            - -funsigned-char
+            - -Wall
+            - -O1
+          ASM:
+            - -masm=auto
+            - -Wa,armasm,--diag_suppress=A1950W
+          Link:
+            - --strict
+            - --info summarysizes
+            - --summary_stderr
+            - --map
+            - --load_addr_map_info
+
+    - type: Release
+      debug: off
+      optimize: speed
+      misc:
+        - C:
+            - -std=c99
+            - -fshort-enums
+            - -fshort-wchar
+            - -funsigned-char
+          ASM:
+            - -masm=auto
+            - -Wa,armasm,--diag_suppress=A1950W
+          Link:
+            - --strict
+            - --info summarysizes
+            - --summary_stderr
+
+  projects:
+    - project: NEUDC.cproject.yaml
