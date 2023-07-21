@@ -5,24 +5,24 @@
 
 #include <arm_math_f16.h>
 #include <arm_math_types_f16.h>
-#include <dsp/window_functions.h>
 
 #include "adc.h"
+#include "vofa.h"
+#include "window.h"
 
 /* 选择窗函数 */
-#define FFT_WINDOW_FUNCTION arm_blackman_harris_92db_f32
+// #define FFT_WINDOW_FUNCTION arm_blackman_harris_92db_f32
 // #define FFT_WINDOW_FUNCTION arm_hanning_f32
 
-static float32_t window[ADC_SAMPLE_SIZE];
-
 static arm_rfft_fast_instance_f16 fast_rfft_instance;
+static float16_t                  fft_output_raw[ADC_SAMPLE_SIZE];
+// 太大了，栈里存不下
 
 float16_t FFT_OUTPUT[ADC_SAMPLE_SIZE / 2 + 1];
 float16_t FFT_PHASE[ADC_SAMPLE_SIZE / 2 + 1];
 
 void fft_init(void) {
   // 初始化窗函数
-  FFT_WINDOW_FUNCTION(window, ADC_SAMPLE_SIZE);
   // 初始化FFT
   arm_rfft_fast_init_f16(&fast_rfft_instance, ADC_SAMPLE_SIZE);
 }
@@ -30,11 +30,9 @@ void fft_init(void) {
 void fft_with_window() {
   // 加窗
   for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
-    SAMPLE_DATA[i] *= window[i];
+    SAMPLE_DATA[i] *= BLACKMAN_HARRIS_WINDOW[i];
   }
-
   // 进行FFT
-  float16_t fft_output_raw[ADC_SAMPLE_SIZE];
   arm_rfft_fast_f16(&fast_rfft_instance, (float16_t *)SAMPLE_DATA, (float16_t *)fft_output_raw, 0);
 
   // 归一化（防止溢出）

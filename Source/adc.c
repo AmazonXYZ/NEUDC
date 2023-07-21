@@ -7,8 +7,6 @@
 
 extern volatile uint8_t STATE_CODE;
 
-#define ADC_RESOLUTION 16384.0f
-
 static uint8_t DMA_CONTROL_TABLE[1024] __attribute__((aligned(1024)));
 
 volatile float16_t SAMPLE_DATA[ADC_SAMPLE_SIZE];
@@ -139,7 +137,7 @@ void adc_stop(void) {
 void adc_sacle(void) {
   // 根据比例处理ADC数据
   for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
-    SAMPLE_DATA[i] = (float16_t)(*(uint16_t *)(SAMPLE_DATA + i) * 16 / ADC_RESOLUTION);
+    SAMPLE_DATA[i] = (float16_t)(*(uint16_t *)(SAMPLE_DATA + i) / 128.0f - 64);
   } // TODO 公式调整
 }
 

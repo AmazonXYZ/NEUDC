@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 #include <arm_math_types.h>
+#include <arm_math_types_f16.h>
 
-#include "arm_math_types_f16.h"
 #include "serial.h"
 
 static const uint8_t FRAME_TAIL[4] = {0x00, 0x00, 0x80, 0x7F};

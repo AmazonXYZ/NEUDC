@@ -7,6 +7,7 @@
 
 #include "adc.h"
 #include "fft.h"
+#include "vofa.h"
 
 extern volatile uint8_t STATE_CODE;
 
@@ -30,7 +31,7 @@ void update(uint16_t freq) {
   // 规范化并转浮点数
   adc_sacle();
 
-  // vofa_justfloat_single((void *)SAMPLE_DATA, ADC_SAMPLE_SIZE, true);
+  // vofa_justfloat_single((void *)SAMPLE_DATA, ADC_SAMPLE_SIZE, true); // TODO debug
 
   // FFT处理
   fft_with_window();
@@ -51,7 +52,7 @@ void preprocess() {
 }
 
 void process(uint8_t time) {
-  // 首先计算需要计算的谐波频率
+  // 首先计算需要采样的谐波频率
   float32_t freq = fundamental_freq * (time + 1);
 
   // 确定最佳采样率（和分辨率）
@@ -85,7 +86,7 @@ void process(uint8_t time) {
   update(sample_freq_selected_k);
 
   // 计算大致分布位置
-  uint32_t index = freq / freq_resolution;
+  uint32_t index = round(freq / freq_resolution);
   // 暴力区间搜索
   float16_t *interval_start = FFT_OUTPUT + index - INDEX_RADIUS;
 
