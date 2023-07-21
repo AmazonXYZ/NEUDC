@@ -7,19 +7,20 @@
 
 #include "adc.h"
 #include "fft.h"
+
 #include "vofa.h"
 
 extern volatile uint8_t STATE_CODE;
 
 #define INDEX_RADIUS 8
 
-static float16_t sample_freq_k = 1000;
+static float32_t sample_freq_k = 1000;
 static float32_t fundamental_freq;
 static float32_t freq_resolution = (1000 * 1e3 / 4096);
 
-float16_t AMPLITUDE[5];
-float16_t PHASE[5];
-float16_t THD;
+float32_t AMPLITUDE[5];
+float32_t PHASE[5];
+float32_t THD;
 
 void update(uint16_t freq) {
   adc_run(freq);
@@ -30,8 +31,6 @@ void update(uint16_t freq) {
 
   // 规范化并转浮点数
   adc_sacle();
-
-  // vofa_justfloat_single((void *)SAMPLE_DATA, ADC_SAMPLE_SIZE, true); // TODO debug
 
   // FFT处理
   fft_with_window();
@@ -45,9 +44,9 @@ void preprocess() {
   update(1000);
 
   // 估算基频
-  float16_t _;
+  float32_t _;
   uint32_t  fw_freq_index;
-  arm_max_f16(FFT_OUTPUT + 1, ADC_SAMPLE_SIZE / 2, &_, &fw_freq_index);
+  arm_max_f32(FFT_OUTPUT + 1, ADC_SAMPLE_SIZE / 2, &_, &fw_freq_index);
   fundamental_freq = fw_freq_index * freq_resolution;
 }
 
@@ -88,10 +87,10 @@ void process(uint8_t time) {
   // 计算大致分布位置
   uint32_t index = round(freq / freq_resolution);
   // 暴力区间搜索
-  float16_t *interval_start = FFT_OUTPUT + index - INDEX_RADIUS;
+  float32_t *interval_start = FFT_OUTPUT + index - INDEX_RADIUS;
 
   // 直接取最大值
-  arm_max_f16(interval_start, INDEX_RADIUS * 2 + 1, AMPLITUDE + time, &index); // 幅值
+  arm_max_f32(interval_start, INDEX_RADIUS * 2 + 1, AMPLITUDE + time, &index); // 幅值
   PHASE[time] = FFT_PHASE[index];                                              // 相位
 
   // 如果是基频，就更新基频
@@ -99,15 +98,15 @@ void process(uint8_t time) {
     fundamental_freq = index * freq_resolution;
   }
 
-  // float16_t  trigger_amplitude;
-  // arm_mean_f16(interval_start, INDEX_RADIUS * 2, &trigger_amplitude);
+  // float32_t  trigger_amplitude;
+  // arm_mean_f32(interval_start, INDEX_RADIUS * 2, &trigger_amplitude);
 
   // //
   // 求出有效加权和。最大值有更高的权重(此处无需额外处理，因为幅度没有作标准变换，已经存在权重分配)
   // float32_t amplitude_sum = 0;
-  // float16_t weighted_sum  = 0;
+  // float32_t weighted_sum  = 0;
   // for (uint8_t i = 0; i <= 2 * INDEX_RADIUS; i++) {
-  //   float16_t amplitude = *(interval_start + i);
+  //   float32_t amplitude = *(interval_start + i);
 
   //   if (amplitude > trigger_amplitude) {
   //     weighted_sum += i * amplitude;

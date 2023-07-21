@@ -29,7 +29,6 @@ solution:
             - -fshort-wchar
             - -funsigned-char
             - -Wall
-            - -O1
           ASM:
             - -masm=auto
             - -Wa,armasm,--diag_suppress=A1950W

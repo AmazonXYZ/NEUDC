@@ -14,9 +14,9 @@
 #include "serial.h"
 
 extern volatile uint8_t STATE_CODE;
-extern float16_t        AMPLITUDE[];
-extern float16_t        PHASE[];
-extern float16_t        THD;
+extern float32_t        AMPLITUDE[];
+extern float32_t        PHASE[];
+extern float32_t        THD;
 
 static const eUSCI_UART_ConfigV1 uart_config = {
     .uartMode          = EUSCI_A_UART_MODE,              // 标准UART模式
@@ -108,7 +108,7 @@ void lcd_graph(void) {
   // 检查是否还在波形界面
   while (STATE_CODE == 0x3) {
     for (uint16_t dot = 0; dot < 320; dot++) {
-      float16_t y      = 0;
+      float32_t y      = 0;
       float32_t radian = dot / 320.0f * 2 * PI;
 
       for (uint8_t i = 0; i < 5; i++) {
