@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <arm_math_types.h>
+#include <arm_math_types_f16.h>
+
 /**
  * @brief baudrate.js
  */

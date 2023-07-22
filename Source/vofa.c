@@ -16,6 +16,7 @@ static const uint8_t FRAME_TAIL[4] = {0x00, 0x00, 0x80, 0x7F};
  * @param array 浮点数组
  * @param length 数据量
  * @param if16 是否为16位浮点数。默认为32位
+ * @warning // TODO 32位不支持，还得修
  */
 void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
   if (if16) {
@@ -23,7 +24,7 @@ void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
 
     float32_t tmp;
     for (uint16_t i = 0; i < length; i++) {
-      tmp = (float32_t)array_f16[i];
+      tmp = (float32_t)array_f16[i]; // 可以优化
       serial_send((uint8_t *)&tmp, 4);
       serial_send(FRAME_TAIL, 4);
     }
@@ -37,6 +38,15 @@ void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
   }
 }
 
+/**
+ * @brief 将双通道数据转换成符合Firewater标准的数据并串口发送
+ *
+ * @note 此格式也适合使用PySerial解析
+ * @param array1 第一通道数据
+ * @param array2 第二通道数据
+ * @param length 数据长度
+ * @param if16 是否为半精度浮点数
+ */
 void vofa_firewater_duo(void *array1, void *array2, uint16_t length, bool if16) {
   if (if16) {
     for (uint16_t i = 0; i < length; i++) {

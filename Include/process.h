@@ -4,10 +4,10 @@
 
 #include <arm_math_types.h>
 
-extern float32_t AMPLITUDE[];
-extern float32_t PHASE[];
+extern float32_t HW_AMP[];
+extern float32_t HW_PHASE[];
 extern float32_t THD;
 
-void update(uint16_t freq);
+void update(float32_t freq);
 void preprocess(void);
 void process(uint8_t time);

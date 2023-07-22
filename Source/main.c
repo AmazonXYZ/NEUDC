@@ -1,32 +1,19 @@
-/**
- * @file main.c
- * @author AmazonXYZ (jqy1977017245@gmail.com)
- * @brief NEUDC 2021 A Solution. Require Arm Compiler for Embedded.
- * @version 0.1
- * @date 2023-07-15
- *
- * @copyright Copyright (c) 2023
- *
- */
 #include "main.h"
 #include <driverlib/driverlib.h>
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <arm_math_types_f16.h>
+#include <arm_math_types.h>
 
 #include "adc.h"
 #include "delay.h"
 #include "fft.h"
 #include "lcd.h"
 #include "led.h"
+#include "msp432p401r.h"
 #include "process.h"
 #include "serial.h"
-
-/* Debug */
-#include "pwm.h"
-#include "vofa.h"
 
 /**
  * @brief 状态码
@@ -38,6 +25,8 @@
  */
 volatile uint8_t STATE_CODE = 0x00;
 
+volatile bool RESAMPLE = false;
+
 int main(void) {
   main_init();
 
@@ -45,13 +34,12 @@ int main(void) {
   delay_init();
   fft_init();
   lcd_init();
-  serial_init();
 
   led_alert_short();
 
-  /* Debug Start */
-  pwm_init();
-  /* Debug End */
+#ifdef Debug
+  serial_init();
+#endif
 
   while (1) {
     switch (STATE_CODE) {
@@ -59,38 +47,37 @@ int main(void) {
       // 空闲等待
       __no_operation();
       break;
+
     case 0x01:
       // 采样开启
-      // preprocess();
-
-      // // 基频校准，额外做一次
-      // process(0);
-      // process(0);
-
-      // process(1);
-      // process(2);
-      // process(3);
-      // process(4);
-
-      /* Debug Start */
-      pwm_run();
-      update(1000);
-      vofa_firewater_duo((void *)FFT_OUTPUT, (void *)FFT_PHASE, ADC_SAMPLE_SIZE / 2 + 1, false);
-      /* Debug End */
-
-      // AMPLITUDE[0] = 1;
-      // AMPLITUDE[4] = 0.1;
-      // THD          = 0.1;
-
-      // lcd_refresh();
-      STATE_CODE = 0x02;
+      RESAMPLE = false;
+      preprocess();
     case 0x02:
-      // 结束等待
-      __no_operation();
+      // 采样循环运行
+      process(0);
+      process(1);
+      process(2);
+      process(3);
+      process(4);
+
+      if (STATE_CODE == 0x01) {
+        STATE_CODE = 0x02;
+      }
+
+      lcd_refresh();
+
+      if (RESAMPLE) {
+        STATE_CODE = 0x01;
+        break;
+      }
+
       break;
     case 0x03:
       // 绘图请求
       lcd_graph();
+      break;
+    case 0x04:
+      // Debug 专用
       break;
     }
   }
@@ -108,7 +95,7 @@ void main_init(void) {
   MAP_PCM_setCoreVoltageLevel(PCM_VCORE1); // 设置核心高压（高性能）
 
   /* 内存配置 */
-  MAP_FlashCtl_setWaitState(FLASH_BANK0, 1); // 设置Flash等待状态为1 // TODO 文档哪写了？
+  MAP_FlashCtl_setWaitState(FLASH_BANK0, 1); // 设置Flash等待状态为1 // TODO 文档
   MAP_FlashCtl_setWaitState(FLASH_BANK1, 1); // 读写速度拉满
 
   /* 时钟配置 参考 SLAU356I Table 8-1 */

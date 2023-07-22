@@ -1,4 +1,5 @@
 #include "adc.h"
+#include "arm_math_types.h"
 #include <driverlib/driverlib.h>
 
 #include <stdbool.h>
@@ -54,49 +55,35 @@ void adc_init() {
 }
 
 /**
- * @brief 选择采样率
+ * @brief 启动ADC
  *
- * @param freq 可选 1000, 500, 250, 125, 62/63, 25
- * @note 建议
- * 500  k ~ 125  k -> 1000  kHz
- * 125  k ~  50  k ->  500  kHz
- *  50  k ~  25  k ->  250  kHz
- *  25  k ~  12.5k ->  125  kHz
- *  12.5k ~   5  k ->   62.5kHz
- *   5  k ~   1  k ->   25  kHz
+ * @param target_freq 信号频率
+ * @return 实际采样频率
  */
-void adc_run(uint16_t freq) {
-  uint8_t divider;
+void adc_run(float32_t target_freq, float32_t *sample_freq_addr) {
+  uint16_t period;
+  if (target_freq > 31.25e3) {
+    period = 23; // 取目标分辨率为2e-7*f，若过大则降低采样频率
+  } else {
+    period = round(3e6 / 4 / target_freq) - 1;
+  } // 此时最大采样时间为750时钟周期
 
-  // 根据目标采样率设定分频系数
-  switch (freq) {
-  case 1000:
-    divider = TIMER_A_CLOCKSOURCE_DIVIDER_1;
-    break;
-  case 500:
-    divider = TIMER_A_CLOCKSOURCE_DIVIDER_2;
-    break;
-  case 250:
-    divider = TIMER_A_CLOCKSOURCE_DIVIDER_4;
-    break;
-  case 125:
-    divider = TIMER_A_CLOCKSOURCE_DIVIDER_8;
-    break;
-  case 62:
-    divider = TIMER_A_CLOCKSOURCE_DIVIDER_10;
-    break;
-  case 25:
-    divider = TIMER_A_CLOCKSOURCE_DIVIDER_40;
-    break;
-  }
+  *sample_freq_addr = 24e6 / (period + 1.0f); // 返回实际采样频率
 
+  /**
+   * @brief 配置Timer_A PWM
+   * @note 参考 SLAS826H Table 5-28, SLAU356I Table 22-1,Table 19-2,Figure 19-12
+   * 此配置方法中，dutyCycle实际为低电平输出周期。
+   * 由于外置触发源默认为拓展采样模式，这个值不应小于18，所以取19。
+   * 理论最小采样时间不大于1us，最大采样时间不大于420us（对应10080时钟周期）
+   */
   const Timer_A_PWMConfig pwn_sample_config = {
-      .clockSource        = TIMER_A_CLOCKSOURCE_SMCLK,
-      .clockSourceDivider = divider,
+      .clockSource        = TIMER_A_CLOCKSOURCE_SMCLK, // 24MHz SMCLK
+      .clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1,
       .compareRegister    = TIMER_A_CAPTURECOMPARE_REGISTER_1,
       .compareOutputMode  = TIMER_A_OUTPUTMODE_SET_RESET,
-      .timerPeriod        = 23,
-      .dutyCycle          = 19}; // 1MHz 方波
+      .timerPeriod        = period,
+      .dutyCycle          = 19};
 
   // 配置DMA双缓存转运。启动前，主副结构各配置1024次转运
   MAP_DMA_setChannelControl(
@@ -137,8 +124,8 @@ void adc_stop(void) {
 void adc_sacle(void) {
   // 根据比例处理ADC数据
   for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
-    SAMPLE_DATA[i] = (float32_t)(*(uint16_t *)(SAMPLE_DATA + i) / 128.0f - 64);
-  } // TODO 公式调整
+    SAMPLE_DATA[i] = (float32_t)(*(uint16_t *)(SAMPLE_DATA + i) / 128.0f - 63.99609375);
+  }
 }
 
 /**
@@ -175,7 +162,7 @@ void DMA_INT1_IRQHandler(void) {
     sample_repeat++;
   } else {
     // 四次中断，结束
-    STATE_CODE = 0x00;
+    SAMPLE_FLAG = false;
 
     sample_repeat = 0;
   }

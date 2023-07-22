@@ -7,33 +7,6 @@
 /**
  * @brief Blackman-Harris 92dB window generation
  *
- *  #include <float.h>
- *  #include <math.h>
- *  #include <stdint.h>
- *  #include <stdio.h>
- *
- *  #define ADC_SAMPLE_SIZE 4096
- *
- *  int main() {
- *  float_t window[ADC_SAMPLE_SIZE];
- *  for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
- *      float_t k = 2.0f / ((float_t)ADC_SAMPLE_SIZE);
- *      float_t w;
- *      // arm_blackman_harris_92db_f32
- *      w = M_PI * i * k;
- *      w = 0.35875f - 0.48829f * cosf(w) + 0.14128f * cosf(2.0f * w) -
- *          0.01168f * cosf(3.0f * w);
- *      window[i] = w;
- *  }
- *  printf("#pragma once\n\n");
- *  printf("#include <arm_math_types.h>\n\n");
- *  printf("const float32_t window[ADC_SAMPLE_SIZE] = {\n    ");
- *  for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
- *      printf("%.8f,", window[i]);
- *  }
- *  printf("\r};\n");
- *  }
- *
  */
 const float32_t BLACKMAN_HARRIS_WINDOW[ADC_SAMPLE_SIZE] = {
     0.00005997, 0.00006002, 0.00006009, 0.00006028, 0.00006052, 0.00006077, 0.00006117, 0.00006159,
@@ -549,3 +522,33 @@ const float32_t BLACKMAN_HARRIS_WINDOW[ADC_SAMPLE_SIZE] = {
     0.00006851, 0.00006746, 0.00006650, 0.00006561, 0.00006475, 0.00006398, 0.00006330, 0.00006268,
     0.00006207, 0.00006159, 0.00006117, 0.00006077, 0.00006052, 0.00006028, 0.00006009, 0.00006002,
 };
+
+/*
+ *  #include <float.h>
+ *  #include <math.h>
+ *  #include <stdint.h>
+ *  #include <stdio.h>
+ *
+ *  #define ADC_SAMPLE_SIZE 4096
+ *
+ *  int main() {
+ *  float_t window[ADC_SAMPLE_SIZE];
+ *  for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
+ *      float_t k = 2.0f / ((float_t)ADC_SAMPLE_SIZE);
+ *      float_t w;
+ *      // arm_blackman_harris_92db_f32
+ *      w = M_PI * i * k;
+ *      w = 0.35875f - 0.48829f * cosf(w) + 0.14128f * cosf(2.0f * w) -
+ *          0.01168f * cosf(3.0f * w);
+ *      window[i] = w;
+ *  }
+ *  printf("#pragma once\n\n");
+ *  printf("#include <arm_math_types.h>\n\n");
+ *  printf("const float32_t window[ADC_SAMPLE_SIZE] = {\n    ");
+ *  for (uint16_t i = 0; i < ADC_SAMPLE_SIZE; i++) {
+ *      printf("%.8f,", window[i]);
+ *  }
+ *  printf("\r};\n");
+ *  }
+ *
+ */

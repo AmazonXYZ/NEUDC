@@ -8,14 +8,14 @@
 
 #include <arm_math.h>
 #include <arm_math_types.h>
-#include <arm_math_types_f16.h>
 
 #include "delay.h"
 #include "serial.h"
 
+extern volatile bool    RESAMPLE;
 extern volatile uint8_t STATE_CODE;
-extern float32_t        AMPLITUDE[];
-extern float32_t        PHASE[];
+extern float32_t        HW_AMP[];
+extern float32_t        HW_PHASE[];
 extern float32_t        THD;
 
 static const eUSCI_UART_ConfigV1 uart_config = {
@@ -91,13 +91,20 @@ void lcd_printf(char *format, ...) {
  *
  */
 void lcd_refresh(void) {
-  // 归一化幅值为百分比
-  lcd_printf("HW2.val=%d%s", (uint16_t)round(AMPLITUDE[1] * 1e5 / AMPLITUDE[0]), FRAME_TAIL);
-  lcd_printf("HW3.val=%d%s", (uint16_t)round(AMPLITUDE[2] * 1e5 / AMPLITUDE[0]), FRAME_TAIL);
-  lcd_printf("HW4.val=%d%s", (uint16_t)round(AMPLITUDE[3] * 1e5 / AMPLITUDE[0]), FRAME_TAIL);
-  lcd_printf("HW5.val=%d%s", (uint16_t)round(AMPLITUDE[4] * 1e5 / AMPLITUDE[0]), FRAME_TAIL);
-  // 总谐波失真为原始值
-  lcd_printf("THD.val=%d%s", (uint16_t)round(THD * 1e3), FRAME_TAIL);
+  // 百分比
+  lcd_printf("HW2.val=%d%s", (uint16_t)round(HW_AMP[1] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  delay_ms(20);
+  lcd_printf("HW3.val=%d%s", (uint16_t)round(HW_AMP[2] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  delay_ms(20);
+  lcd_printf("HW4.val=%d%s", (uint16_t)round(HW_AMP[3] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  delay_ms(20);
+  lcd_printf("HW5.val=%d%s", (uint16_t)round(HW_AMP[4] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  delay_ms(20);
+
+  float32_t _THD;
+  arm_rms_f32(HW_AMP + 1, 4, &_THD);
+
+  lcd_printf("THD.val=%d%s", (uint16_t)round(_THD / HW_AMP[0] * 4e5), FRAME_TAIL);
 }
 
 /**
@@ -107,16 +114,16 @@ void lcd_refresh(void) {
 void lcd_graph(void) {
   // 检查是否还在波形界面
   while (STATE_CODE == 0x3) {
-    for (uint16_t dot = 0; dot < 320; dot++) {
+    for (uint16_t x = 0; x < 320; x++) {
       float32_t y      = 0;
-      float32_t radian = dot / 320.0f * 2 * PI;
+      float32_t radian = x / 320.0f * 2 * PI;
 
       for (uint8_t i = 0; i < 5; i++) {
-        y += AMPLITUDE[i] * arm_sin_f32((i + 1) * radian + PHASE[i]);
+        y += HW_AMP[i] * arm_sin_f32((i + 1) * radian + HW_PHASE[i]);
       }
 
       // 归一化
-      y /= (AMPLITUDE[0] + AMPLITUDE[1] + AMPLITUDE[2] + AMPLITUDE[3] + AMPLITUDE[4]);
+      y /= (HW_AMP[0] + HW_AMP[1] + HW_AMP[2] + HW_AMP[3] + HW_AMP[4]);
       // 规范化
       y = 240 / 2.0f * (y + 1);
 
@@ -151,6 +158,7 @@ void EUSCIA1_IRQHandler(void) {
   switch (trans_code) {
   case 0x1:
     // 开始采样/重新采样
+    RESAMPLE   = true;
     STATE_CODE = 0x1;
     break;
 

@@ -22,6 +22,8 @@ solution:
     - type: Debug
       debug: on
       optimize: none
+      define:
+       - Debug
       misc:
         - C:
             - -std=c99
