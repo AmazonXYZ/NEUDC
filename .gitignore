@@ -5,4 +5,4 @@
 *.cbuild-idx.yml
 */*.cbuild.yml
 */*.cprj
-*/RTE/Device/*.base@*
+*/RTE/Device/MSP432P401R/*.base@*
