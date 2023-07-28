@@ -9,15 +9,12 @@
 #include <arm_math_types.h>
 #include <arm_math_types_f16.h>
 
-/**
- * @brief baudrate.js
- */
 static const eUSCI_UART_ConfigV1 uart_config = {
     .uartMode          = EUSCI_A_UART_MODE,              // 标准UART模式
     .selectClockSource = EUSCI_A_UART_CLOCKSOURCE_SMCLK, // 子系统主时钟
     .clockPrescalar    = 13,                             // 时钟分频（计算得）
-    .firstModReg       = 0,                              // （计算得）
-    .secondModReg      = 37,                             // （计算得）
+    .firstModReg       = 0,                              // 对应波特率（计算得）
+    .secondModReg      = 37,                             // 9600（计算得）
     .overSampling      = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION, // 标准超采
     .dataLength        = EUSCI_A_UART_8_BIT_LEN,                        // 八位数据长度
     .numberofStopBits  = EUSCI_A_UART_ONE_STOP_BIT,                     // 一停止位

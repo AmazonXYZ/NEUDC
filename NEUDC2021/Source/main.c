@@ -7,9 +7,10 @@
 #include <arm_math_types.h>
 
 #include "adc.h"
+#include "bluetooth_serial.h"
 #include "delay.h"
 #include "fft.h"
-#include "lcd.h"
+#include "lcd_serial.h"
 #include "led.h"
 #include "msp432p401r.h"
 #include "process.h"
@@ -31,13 +32,14 @@ int main(void) {
   main_init();
 
   adc_init();
+  bluetooth_init();
   delay_init();
   fft_init();
   lcd_init();
 
   led_alert_short();
 
-#ifdef Debug
+#ifdef DEBUG
   serial_init();
 #endif
 
@@ -63,8 +65,11 @@ int main(void) {
       if (STATE_CODE == 0x01) {
         STATE_CODE = 0x02;
       }
-
+      // 更新lcd数据
       lcd_refresh();
+
+      // 更新蓝牙数据
+      bluetooth_printf("<%f,%f,%f,%f,%f:a>", hw_amp[0], hw_amp[1], hw_amp[2], hw_amp[3], hw_amp[4]);
 
       if (RESAMPLE) {
         STATE_CODE = 0x01;
@@ -95,7 +100,7 @@ void main_init(void) {
   MAP_PCM_setCoreVoltageLevel(PCM_VCORE1); // 设置核心高压（高性能）
 
   /* 内存配置 */
-  MAP_FlashCtl_setWaitState(FLASH_BANK0, 1); // 设置Flash等待状态为1 // TODO 文档
+  MAP_FlashCtl_setWaitState(FLASH_BANK0, 1); // 设置Flash等待状态为1 // TODO 文档?
   MAP_FlashCtl_setWaitState(FLASH_BANK1, 1); // 读写速度拉满
 
   /* 时钟配置 参考 SLAU356I Table 8-1 */

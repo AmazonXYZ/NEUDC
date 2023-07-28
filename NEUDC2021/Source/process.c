@@ -5,20 +5,21 @@
 #include <arm_math_types.h>
 
 #include "adc.h"
+#include "bluetooth_serial.h"
 #include "fft.h"
 
 extern volatile uint8_t STATE_CODE;
 
-#define INDEX_RADIUS       10
-#define FILTER_WINDOW_SIZE 12
+#define INDEX_RADIUS       8
+#define FILTER_WINDOW_SIZE 8
 
 static float32_t fundamental_freq;
 static float32_t freq_resolution;
 
 bool SAMPLE_FLAG = true;
 
-float32_t HW_AMP[5];
-float32_t HW_PHASE[5];
+float32_t hw_amp[5];
+float32_t hw_phase[5];
 
 static float32_t amp_window[5][FILTER_WINDOW_SIZE] = {{0.5}};
 static uint8_t   amp_window_offset                 = 0;
@@ -78,13 +79,18 @@ void preprocess() {
 
   for (uint8_t time = 0; time < 5; time++) {
     uint32_t index = round(fundamental_freq * (time + 1) / freq_resolution);
-    HW_PHASE[time] = FFT_PHASE[index]; // 相位
+    hw_phase[time] = FFT_PHASE[index]; // 相位
 
     // 顺便窗口初始化
     for (uint8_t i = 0; i < FILTER_WINDOW_SIZE; i++) {
       amp_window[time][i] = FFT_AMP[index];
     }
   }
+
+  // 发送相位数据
+  bluetooth_printf(
+      "<%f,%f,%f,%f,%f:p>", hw_phase[0], hw_phase[1], hw_phase[2], hw_phase[3], hw_phase[4]
+  );
 }
 
 void process(uint8_t time) {
@@ -104,14 +110,14 @@ void process(uint8_t time) {
   uint8_t    search_size  = 2 * INDEX_RADIUS + 1;
   float32_t *search_start = FFT_AMP - INDEX_RADIUS + index;
 
-  if (index + INDEX_RADIUS >= FFT_OUTPUT_SIZE) {
+  if (INDEX_RADIUS + index >= FFT_OUTPUT_SIZE) {
     search_size = INDEX_RADIUS + FFT_OUTPUT_SIZE - index;
-  } else if (INDEX_RADIUS >= index) {
+  } else if (INDEX_RADIUS - index >= 0) {
     search_size  = INDEX_RADIUS + index - 1;
     search_start = FFT_AMP + 1;
   }
 
-  arm_max_f32(search_start, search_size, HW_AMP + time, &index_offset); // 幅值
+  arm_max_f32(search_start, search_size, hw_amp + time, &index_offset); // 幅值
   index += index_offset - INDEX_RADIUS;
 
   // 滑动窗口滤波
@@ -121,8 +127,8 @@ void process(uint8_t time) {
   }
 
   // 计算平均值
-  arm_mean_f32(amp_window[time], FILTER_WINDOW_SIZE, HW_AMP + time); // 幅值
+  arm_mean_f32(amp_window[time], FILTER_WINDOW_SIZE, hw_amp + time); // 幅值
 
-#ifdef Debug
+#ifdef DEBUG
 #endif
 }

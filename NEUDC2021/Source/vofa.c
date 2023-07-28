@@ -16,7 +16,6 @@ static const uint8_t FRAME_TAIL[4] = {0x00, 0x00, 0x80, 0x7F};
  * @param array 浮点数组
  * @param length 数据量
  * @param if16 是否为16位浮点数。默认为32位
- * @warning // TODO 32位不支持，还得修
  */
 void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
   if (if16) {
@@ -24,7 +23,7 @@ void vofa_justfloat_single(void *array, uint16_t length, bool if16) {
 
     float32_t tmp;
     for (uint16_t i = 0; i < length; i++) {
-      tmp = (float32_t)array_f16[i]; // 可以优化
+      tmp = (float32_t)array_f16[i];
       serial_send((uint8_t *)&tmp, 4);
       serial_send(FRAME_TAIL, 4);
     }

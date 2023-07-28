@@ -1,4 +1,4 @@
-#include "lcd.h"
+#include "lcd_serial.h"
 #include <driverlib/driverlib.h>
 
 #include <stdarg.h>
@@ -14,16 +14,16 @@
 
 extern volatile bool    RESAMPLE;
 extern volatile uint8_t STATE_CODE;
-extern float32_t        HW_AMP[];
-extern float32_t        HW_PHASE[];
+extern float32_t        hw_amp[];
+extern float32_t        hw_phase[];
 extern float32_t        THD;
 
 static const eUSCI_UART_ConfigV1 uart_config = {
     .uartMode          = EUSCI_A_UART_MODE,              // 标准UART模式
     .selectClockSource = EUSCI_A_UART_CLOCKSOURCE_SMCLK, // 子系统主时钟
     .clockPrescalar    = 13,                             // 时钟分频（计算得）
-    .firstModReg       = 0,                              // （计算得）
-    .secondModReg      = 37,                             // （计算得）
+    .firstModReg       = 0,                              // 对应波特率（计算得）
+    .secondModReg      = 37,                             // 9600（计算得）
     .overSampling      = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION, // 标准超采
     .dataLength        = EUSCI_A_UART_8_BIT_LEN,                        // 八位数据长度
     .numberofStopBits  = EUSCI_A_UART_ONE_STOP_BIT,                     // 一停止位
@@ -40,32 +40,20 @@ static const uint8_t FRAME_TAIL[3] = "\xFF\xFF\xFF"; // TJC控制帧尾字符
 void lcd_init(void) {
   /* GPIO 配置 */
   MAP_GPIO_setAsPeripheralModuleFunctionInputPin(
-      GPIO_PORT_P2, GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION
-  ); // P2.2复用为RXD，P2.3复用为TXD
+      GPIO_PORT_P3, GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION
+  ); // P3.2复用为RXD，P3.3复用为TXD
 
   /* UART 配置 */
-  MAP_UART_initModule(EUSCI_A1_BASE, &uart_config);
+  MAP_UART_initModule(EUSCI_A2_BASE, &uart_config);
 
-  MAP_UART_enableModule(EUSCI_A1_BASE); // 将其作为UART模块使能
+  MAP_UART_enableModule(EUSCI_A2_BASE); // 将其作为UART模块使能
 
-  MAP_UART_enableInterrupt(EUSCI_A1_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT); // 配置中断类型
-  MAP_Interrupt_enableInterrupt(INT_EUSCIA1);                              // 使能EUSCIA0中断
+  MAP_UART_enableInterrupt(EUSCI_A2_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT); // 配置中断类型
+  MAP_Interrupt_enableInterrupt(INT_EUSCIA2);                              // 使能EUSCIA2中断
 }
 
 /**
- * @brief 向LCD发送数据
- *
- * @param data 发送数据
- * @param length 数据长度
- */
-void lcd_send(const uint8_t *data, uint16_t length) {
-  while (length--) {
-    MAP_UART_transmitData(EUSCI_A1_BASE, *data++);
-  }
-}
-
-/**
- * @brief 向LCD发送字符串
+ * @brief 向LCD发送字符串，自动添加帧尾控制字符
  *
  * @param format 格式化字符串
  * @param ... 格式化内容
@@ -81,7 +69,13 @@ void lcd_printf(char *format, ...) {
   uint16_t offset = 0;
 
   while (fstring[offset] != 0) {
-    MAP_UART_transmitData(EUSCI_A1_BASE, fstring[offset]);
+    MAP_UART_transmitData(EUSCI_A2_BASE, fstring[offset]);
+    offset++;
+  }
+
+  offset = 0;
+  while (FRAME_TAIL[offset] != 0) {
+    MAP_UART_transmitData(EUSCI_A2_BASE, FRAME_TAIL[offset]);
     offset++;
   }
 }
@@ -92,19 +86,19 @@ void lcd_printf(char *format, ...) {
  */
 void lcd_refresh(void) {
   // 百分比
-  lcd_printf("HW2.val=%d%s", (uint16_t)round(HW_AMP[1] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  lcd_printf("HW2.val=%d", (uint16_t)round(hw_amp[1] / hw_amp[0] * 1e5));
   delay_ms(20);
-  lcd_printf("HW3.val=%d%s", (uint16_t)round(HW_AMP[2] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  lcd_printf("HW3.val=%d", (uint16_t)round(hw_amp[2] / hw_amp[0] * 1e5));
   delay_ms(20);
-  lcd_printf("HW4.val=%d%s", (uint16_t)round(HW_AMP[3] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  lcd_printf("HW4.val=%d", (uint16_t)round(hw_amp[3] / hw_amp[0] * 1e5));
   delay_ms(20);
-  lcd_printf("HW5.val=%d%s", (uint16_t)round(HW_AMP[4] / HW_AMP[0] * 1e5), FRAME_TAIL);
+  lcd_printf("HW5.val=%d", (uint16_t)round(hw_amp[4] / hw_amp[0] * 1e5));
   delay_ms(20);
 
   float32_t _THD;
-  arm_rms_f32(HW_AMP + 1, 4, &_THD);
+  arm_rms_f32(hw_amp + 1, 4, &_THD);
 
-  lcd_printf("THD.val=%d%s", (uint16_t)round(_THD / HW_AMP[0] * 4e5), FRAME_TAIL);
+  lcd_printf("THD.val=%d", (uint16_t)round(_THD / hw_amp[0] * 4e5));
 }
 
 /**
@@ -119,15 +113,15 @@ void lcd_graph(void) {
       float32_t radian = x / 320.0f * 2 * PI;
 
       for (uint8_t i = 0; i < 5; i++) {
-        y += HW_AMP[i] * arm_sin_f32((i + 1) * radian + HW_PHASE[i]);
+        y += hw_amp[i] * arm_sin_f32((i + 1) * radian + hw_phase[i]);
       }
 
       // 归一化
-      y /= (HW_AMP[0] + HW_AMP[1] + HW_AMP[2] + HW_AMP[3] + HW_AMP[4]);
+      y /= (hw_amp[0] + hw_amp[1] + hw_amp[2] + hw_amp[3] + hw_amp[4]);
       // 规范化
       y = 240 / 2.0f * (y + 1);
 
-      lcd_printf("add 1,0,%u%s", (uint8_t)round(y), FRAME_TAIL);
+      lcd_printf("add 1,0,%u", (uint8_t)round(y));
       delay_ms(15);
     }
   }
@@ -137,7 +131,7 @@ void lcd_graph(void) {
  * @brief LCD触控中断
  *
  */
-void EUSCIA1_IRQHandler(void) {
+void EUSCIA2_IRQHandler(void) {
 
   /**
    * @brief 传输状态码
@@ -146,7 +140,7 @@ void EUSCIA1_IRQHandler(void) {
    * @param 0x03 绘图请求
    */
   uint8_t trans_code;
-  trans_code = MAP_UART_receiveData(EUSCI_A1_BASE);
+  trans_code = MAP_UART_receiveData(EUSCI_A2_BASE);
 
   // 异常处理
   static uint8_t miss = 0;

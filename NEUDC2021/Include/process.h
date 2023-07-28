@@ -4,8 +4,8 @@
 
 #include <arm_math_types.h>
 
-extern float32_t HW_AMP[];
-extern float32_t HW_PHASE[];
+extern float32_t hw_amp[];
+extern float32_t hw_phase[];
 extern float32_t THD;
 
 void update(float32_t freq);

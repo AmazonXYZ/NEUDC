@@ -17,7 +17,8 @@ project:
         - file: ./Source/pwm.c
         - file: ./Source/vofa.c
         - file: ./Source/process.c
-        - file: ./Source/lcd.c
+        - file: ./Source/lcd_serial.c
+        - file: ./Source/bluetooth_serial.c
 
     - group: driverlib
       files:
