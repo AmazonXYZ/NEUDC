@@ -2,6 +2,7 @@
 /tmp/
 /out/
 /.clang-format
-*/*.yml
+*.cbuild-idx.yml
+*/*.cbuild.yml
 */*.cprj
 */RTE/Device/*.base@*
