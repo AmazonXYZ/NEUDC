@@ -25,7 +25,7 @@ static const eUSCI_UART_ConfigV1 uart_config = {
 
 void bluetooth_init(void) {
   /* PMAP 配置 */
-  MAP_PMAP_configurePorts(port_mapping, P2MAP, 1, PMAP_DISABLE_RECONFIGURATION);
+  MAP_PMAP_configurePorts(port_mapping, PMAP_P2MAP, 1, PMAP_DISABLE_RECONFIGURATION);
   /* GPIO 配置 */
   MAP_GPIO_setAsPeripheralModuleFunctionInputPin(
       GPIO_PORT_P2, GPIO_PIN6 | GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION
@@ -37,6 +37,9 @@ void bluetooth_init(void) {
   MAP_UART_enableModule(EUSCI_A1_BASE); // 将其作为UART模块使能
 }
 
+/// @brief 通过蓝牙串口发送数据。请先和手机配对。
+/// @param format
+/// @param
 void bluetooth_printf(char *format, ...) {
   char fstring[128];
 
