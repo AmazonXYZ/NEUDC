@@ -1,0 +1,29 @@
+project:
+  linker:
+    - script: ../Utility/MSP432P401R.sct
+
+  add-path:
+    - ./Include
+
+  groups:
+    - group: Source
+      files:
+        - file: ./Source/main.c
+        - file: ./Source/fft.c
+        - file: ./Source/serial.c
+        - file: ./Source/led.c
+        - file: ./Source/delay.c
+        - file: ./Source/adc.c
+        - file: ./Source/pwm.c
+        - file: ./Source/vofa.c
+        - file: ./Source/process.c
+        - file: ./Source/lcd.c
+
+    - group: driverlib
+      files:
+        - file: ../SDK/driverlib.a
+
+  components:
+    - component: ARM::CMSIS:CORE
+    - component: ARM::CMSIS:DSP&Source@1.14.4
+    - component: TexasInstruments::Device:Startup

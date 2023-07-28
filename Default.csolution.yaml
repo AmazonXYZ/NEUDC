@@ -12,7 +12,6 @@ solution:
 
   add-path:
     - SDK
-    - Include
 
   target-types:
     - type: Default
@@ -22,8 +21,6 @@ solution:
     - type: Debug
       debug: on
       optimize: none
-      define:
-       - Debug
       misc:
         - C:
             - -std=c99
@@ -40,6 +37,8 @@ solution:
             - --summary_stderr
             - --map
             - --load_addr_map_info
+      define:
+       - DEBUG
 
     - type: Release
       debug: off
@@ -59,4 +58,4 @@ solution:
             - --summary_stderr
 
   projects:
-    - project: NEUDC.cproject.yaml
+    - project: ./NEUDC2021/NEUDC2021.cproject.yaml

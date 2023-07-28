@@ -1,9 +1,7 @@
 /.vscode/
 /tmp/
 /out/
-/bin/
 /.clang-format
-/TODO.md
-/*.yml
-/*.cprj
-**/*.base@*
+*/*.yml
+*/*.cprj
+*/RTE/Device/*.base@*
