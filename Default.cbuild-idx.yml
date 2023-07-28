@@ -1,9 +1,0 @@
-build-idx:
-  generated-by: csolution version 2.0.0
-  csolution: Default.csolution.yaml
-  cprojects:
-    - cproject: NEUDC2021/NEUDC2021.cproject.yaml
-  cbuilds:
-    - cbuild: NEUDC2021/NEUDC2021.Debug+Default.cbuild.yml
-      project: NEUDC2021
-      configuration: .Debug+Default
