@@ -1,4 +1,11 @@
 solution:
+  projects:
+    - project: ./NEUDC2021/NEUDC2021.cproject.yaml
+    - project: ./NEUDC2023/NEUDC2023.cproject.yaml
+
+  add-path:
+    - SDK
+
   processor:
     trustzone: non-secure
     fpu: on
@@ -9,9 +16,6 @@ solution:
     - pack: ARM::CMSIS
     - pack: ARM::CMSIS-DSP
     - pack: TexasInstruments::MSP432P4xx_DFP
-
-  add-path:
-    - SDK
 
   target-types:
     - type: Default
@@ -38,7 +42,7 @@ solution:
             - --map
             - --load_addr_map_info
       define:
-       - DEBUG
+        - DEBUG
 
     - type: Release
       debug: off
@@ -56,6 +60,3 @@ solution:
             - --strict
             - --info summarysizes
             - --summary_stderr
-
-  projects:
-    - project: ./NEUDC2021/NEUDC2021.cproject.yaml

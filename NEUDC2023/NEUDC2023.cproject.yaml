@@ -1,0 +1,23 @@
+project:
+  linker:
+    - script: ../Utility/MSP432P401R.sct
+
+  add-path:
+    - ./Include
+
+  groups:
+    - group: Source
+      files:
+        - file: ./Source/main.c
+        - file: ./Source/ad9954.c
+        - file: ./Source/bluetooth_serial.c
+        - file: ./Source/delay.c
+
+    - group: driverlib
+      files:
+        - file: ../SDK/driverlib.a
+
+  components:
+    - component: ARM::CMSIS:CORE
+    - component: ARM::CMSIS:DSP&Source@1.14.4
+    - component: TexasInstruments::Device:Startup
