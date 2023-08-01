@@ -19,19 +19,17 @@ extern float32_t        hw_phase[];
 extern float32_t        THD;
 
 static const eUSCI_UART_ConfigV1 uart_config = {
-    .uartMode          = EUSCI_A_UART_MODE,              // 标准UART模式
-    .selectClockSource = EUSCI_A_UART_CLOCKSOURCE_SMCLK, // 子系统主时钟
-    .clockPrescalar    = 13,                             // 时钟分频（计算得）
-    .firstModReg       = 0,                              // 对应波特率（计算得）
-    .secondModReg      = 37,                             // 9600（计算得）
+    .uartMode          = EUSCI_A_UART_AUTOMATIC_BAUDRATE_DETECTION_MODE, // 自适应波特率
+    .selectClockSource = EUSCI_A_UART_CLOCKSOURCE_SMCLK,                 // 子系统主时钟
+    .clockPrescalar    = 0,
+    .firstModReg       = 0,
+    .secondModReg      = 0,
     .overSampling      = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION, // 标准超采
     .dataLength        = EUSCI_A_UART_8_BIT_LEN,                        // 八位数据长度
     .numberofStopBits  = EUSCI_A_UART_ONE_STOP_BIT,                     // 一停止位
     .msborLsbFirst     = EUSCI_A_UART_LSB_FIRST,                        // LSB顺序
     .parity            = EUSCI_A_UART_NO_PARITY,                        // 无校验位
 };
-
-static const uint8_t FRAME_TAIL[3] = "\xFF\xFF\xFF"; // TJC控制帧尾字符
 
 /**
  * @brief LCD串口初始化
@@ -73,11 +71,9 @@ void lcd_printf(char *format, ...) {
     offset++;
   }
 
-  offset = 0;
-  while (FRAME_TAIL[offset] != 0) {
-    MAP_UART_transmitData(EUSCI_A2_BASE, FRAME_TAIL[offset]);
-    offset++;
-  }
+  for (uint8_t i = 0; i < 3; i++) {
+    MAP_UART_transmitData(EUSCI_A2_BASE, 0xFF);
+  } // TJC控制帧尾字符
 }
 
 /**
@@ -87,13 +83,13 @@ void lcd_printf(char *format, ...) {
 void lcd_refresh(void) {
   // 百分比
   lcd_printf("HW2.val=%d", (uint16_t)round(hw_amp[1] / hw_amp[0] * 1e5));
-  delay_ms(20);
+  delay_ms(10);
   lcd_printf("HW3.val=%d", (uint16_t)round(hw_amp[2] / hw_amp[0] * 1e5));
-  delay_ms(20);
+  delay_ms(10);
   lcd_printf("HW4.val=%d", (uint16_t)round(hw_amp[3] / hw_amp[0] * 1e5));
-  delay_ms(20);
+  delay_ms(10);
   lcd_printf("HW5.val=%d", (uint16_t)round(hw_amp[4] / hw_amp[0] * 1e5));
-  delay_ms(20);
+  delay_ms(10);
 
   float32_t _THD;
   arm_rms_f32(hw_amp + 1, 4, &_THD);

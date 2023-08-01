@@ -1,12 +1,18 @@
 #include "process.h"
 #include <driverlib/driverlib.h>
 
+#include <stdint.h>
+
 #include <arm_math.h>
 #include <arm_math_types.h>
 
 #include "adc.h"
 #include "bluetooth_serial.h"
 #include "fft.h"
+
+#ifdef DEBUG
+#include "vofa.h"
+#endif
 
 extern volatile uint8_t STATE_CODE;
 
@@ -16,13 +22,13 @@ extern volatile uint8_t STATE_CODE;
 static float32_t fundamental_freq;
 static float32_t freq_resolution;
 
-bool SAMPLE_FLAG = true;
+static float32_t amp_window[5][FILTER_WINDOW_SIZE];
+static uint8_t   amp_window_offset = 0;
+
+bool SAMPLE_FLAG;
 
 float32_t hw_amp[5];
 float32_t hw_phase[5];
-
-static float32_t amp_window[5][FILTER_WINDOW_SIZE] = {{0.5}};
-static uint8_t   amp_window_offset                 = 0;
 
 void update(float32_t freq) {
   SAMPLE_FLAG = true;
@@ -40,6 +46,11 @@ void update(float32_t freq) {
 
   // FFT处理
   fft_with_window();
+
+#ifdef DEBUG
+  // vofa_justfloat_single((void *)FFT_AMP, 2049, false);
+  // vofa_firewater_duo((void *)SAMPLE_DATA, (void *)SAMPLE_DATA, 4096, false);
+#endif
 
   // 更新频谱分辨率
   freq_resolution = (sample_freq / 4096);
@@ -101,18 +112,21 @@ void process(uint8_t time) {
   update(target_freq);
 
   // 计算大致分布位置
-  uint32_t index = round(target_freq / freq_resolution);
+  int32_t index = round(target_freq / freq_resolution);
 
   // 直接取区间最大值
   uint32_t index_offset;
 
   // 边界处理
   uint8_t    search_size  = 2 * INDEX_RADIUS + 1;
-  float32_t *search_start = FFT_AMP - INDEX_RADIUS + index;
+  float32_t *search_start = FFT_AMP + index - INDEX_RADIUS;
 
+  // 右边界
   if (INDEX_RADIUS + index >= FFT_OUTPUT_SIZE) {
     search_size = INDEX_RADIUS + FFT_OUTPUT_SIZE - index;
-  } else if (INDEX_RADIUS - index >= 0) {
+  }
+  // 左边界
+  if (INDEX_RADIUS - index >= 0) {
     search_size  = INDEX_RADIUS + index - 1;
     search_start = FFT_AMP + 1;
   }
@@ -128,7 +142,4 @@ void process(uint8_t time) {
 
   // 计算平均值
   arm_mean_f32(amp_window[time], FILTER_WINDOW_SIZE, hw_amp + time); // 幅值
-
-#ifdef DEBUG
-#endif
 }

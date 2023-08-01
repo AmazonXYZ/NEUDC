@@ -23,7 +23,6 @@ float32_t FFT_PHASE[FFT_OUTPUT_SIZE];
 float32_t FFT_OUTPUT_RAW[ADC_SAMPLE_SIZE];
 
 void fft_init(void) {
-  // 初始化窗函数
   // 初始化FFT
   arm_rfft_fast_init_f32(&fast_rfft_instance, ADC_SAMPLE_SIZE);
 }
@@ -42,7 +41,7 @@ void fft_with_window() {
   }
 
   // 计算幅值
-  FFT_AMP[0]               = fabs(FFT_OUTPUT_RAW[0]);
-  FFT_AMP[FFT_OUTPUT_SIZE - 1] = fabs(FFT_OUTPUT_RAW[1]);
+  FFT_AMP[0]                   = fabsf(FFT_OUTPUT_RAW[0]);
+  FFT_AMP[FFT_OUTPUT_SIZE - 1] = fabsf(FFT_OUTPUT_RAW[1]);
   arm_cmplx_mag_f32(FFT_OUTPUT_RAW + 2, FFT_AMP + 1, FFT_OUTPUT_SIZE - 2);
 }

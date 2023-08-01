@@ -14,7 +14,10 @@
 #include "led.h"
 #include "msp432p401r.h"
 #include "process.h"
+
+#ifdef DEBUG
 #include "serial.h"
+#endif
 
 /**
  * @brief 状态码
@@ -62,28 +65,31 @@ int main(void) {
       process(3);
       process(4);
 
+      if (RESAMPLE) {
+        STATE_CODE = 0x01;
+        break;
+      }
+
       if (STATE_CODE == 0x01) {
         STATE_CODE = 0x02;
       }
+
       // 更新lcd数据
       lcd_refresh();
 
       // 更新蓝牙数据
       bluetooth_printf("<%f,%f,%f,%f,%f:a>", hw_amp[0], hw_amp[1], hw_amp[2], hw_amp[3], hw_amp[4]);
 
-      if (RESAMPLE) {
-        STATE_CODE = 0x01;
-        break;
-      }
-
       break;
     case 0x03:
       // 绘图请求
       lcd_graph();
       break;
+#ifdef DEBUG
     case 0x04:
       // Debug 专用
       break;
+#endif
     }
   }
 }
