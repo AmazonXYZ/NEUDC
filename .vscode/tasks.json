@@ -1,0 +1,66 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cmsis-csolution.build",
+            "label": "Build",
+            "group": "build",
+            "problemMatcher": [],
+            "solution": "${command:cmsis-csolution.getSolutionPath}",
+            "project": "${command:cmsis-csolution.getProjectPath}",
+            "buildType": "${command:cmsis-csolution.getBuildType}",
+            "targetType": "${command:cmsis-csolution.getTargetType}"
+        },
+        {
+            "type": "cmsis-csolution.build",
+            "label": "Clean Build",
+            "group": "build",
+            "problemMatcher": [],
+            "solution": "${command:cmsis-csolution.getSolutionPath}",
+            "project": "${command:cmsis-csolution.getProjectPath}",
+            "buildType": "${command:cmsis-csolution.getBuildType}",
+            "targetType": "${command:cmsis-csolution.getTargetType}",
+            "rebuild": true
+        },
+        {
+            "type": "shell",
+            "label": "Download",
+            "problemMatcher": [],
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build",
+                "Generate Binary"
+            ],
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/xds110.cfg",
+                "-f",
+                "board/ti_msp432_launchpad.cfg",
+                "-c",
+                "program out/firmware.bin 0x00000000 verify reset exit"
+            ]
+        },
+        {
+            "type": "shell",
+            "label": "Generate Binary",
+            "group": "build",
+            "command": "fromelf",
+            "args": [
+                "--bin",
+                "--output=out/firmware.bin",
+                "${command:cmsis-csolution.getBinaryFile}"
+            ],
+            "isBackground": true
+        },
+        {
+            "type": "shell",
+            "label": "Echo",
+            "command": "echo",
+            "args": [
+                "${command:cmsis-csolution.getProjectPath}"
+            ],
+            "group": "test"
+        }
+    ]
+}
